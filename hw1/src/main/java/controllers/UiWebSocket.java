@@ -10,11 +10,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import org.eclipse.jetty.websocket.api.Session;
 
-/** Web socket class: DO NOT MODIFY.
+/**
+ * Web socket class: DO NOT MODIFY.
+ * 
  * @author Shirish Singh
  *
  */
-public class UiWebSocket implements Consumer<WsHandler>  {
+public class UiWebSocket implements Consumer<WsHandler> {
 
   // Store sessions to broadcast a message to all users
   private static final Queue<Session> SESSIONS = new ConcurrentLinkedQueue<>();
