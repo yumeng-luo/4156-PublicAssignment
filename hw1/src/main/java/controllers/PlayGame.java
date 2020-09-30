@@ -10,13 +10,13 @@ import models.Move;
 import models.Player;
 import org.eclipse.jetty.websocket.api.Session;
 
-class PlayGame {
+public class PlayGame {
 
   private static final int PORT_NUMBER = 8080;
 
   private static Javalin app;
 
-  private static GameBoard gb;
+  public static GameBoard gb;
   private static Gson gson;
 
   /**
@@ -32,13 +32,9 @@ class PlayGame {
       config.addStaticFiles("/public");
     }).start(PORT_NUMBER);
 
-    // Test Echo Server
-    app.post("/echo", ctx -> {
-      ctx.result(ctx.body());
-    });
-
     // new game
     app.get("/newgame", ctx -> {
+      gb = new GameBoard();
       ctx.redirect("tictactoe.html");
     });
 
@@ -75,37 +71,47 @@ class PlayGame {
 
     // player moves
     app.post("/move/:playerId", ctx -> {
-      // get player id , type and move
-      Move currentMove = new Move();
 
-      int currentPlayer = Integer.parseInt(ctx.pathParam("playerId"));
-      if (currentPlayer == 1) {
-        currentMove.setPlayer(gb.getP1());
-      } else {
-        currentMove.setPlayer(gb.getP2());
-      }
-      String playerMove = ctx.body();
-      currentMove.setMoveX(Character.getNumericValue(playerMove.charAt(2)));
-      currentMove.setMoveY(Character.getNumericValue(playerMove.charAt(6)));
-
-      // check if player move valid
       Message currentMessage = new Message();
-      currentMessage = checkMoveValid(currentMove, currentMessage);
-      if (currentMessage.isMoveValidity()) {
-        // make move and update board
-        char[][] boardState = gb.getBoardState();
-        boardState[currentMove.getMoveX()][currentMove.getMoveY()] = currentMove.getPlayer()
-            .getType();
-        gb.setBoardState(boardState);
-        gb.setTurn(3 - gb.getTurn());
+      // check if game has started yet
+      if (gb == null || !gb.isGameStarted()) {
+        currentMessage.setMoveValidity(false);
+        currentMessage.setCode(401);
+        currentMessage.setMessage("Wait for player to join");
+      } else {
+        // game started get move check valid and update
+        // get player id , type and move
+        Move currentMove = new Move();
 
-        // check if game ended
-        if (checkGameEnd()) {
-          if (gb.isDraw()) {
-            gb.setGameStarted(false);
-          } else {
-            gb.setWinner(currentPlayer);
-            gb.setGameStarted(false);
+        int currentPlayer = Integer.parseInt(ctx.pathParam("playerId"));
+        if (currentPlayer == 1) {
+          currentMove.setPlayer(gb.getP1());
+        } else {
+          currentMove.setPlayer(gb.getP2());
+        }
+        String playerMove = ctx.body();
+        currentMove.setMoveX(Character.getNumericValue(playerMove.charAt(2)));
+        currentMove.setMoveY(Character.getNumericValue(playerMove.charAt(6)));
+
+        // check if player move valid
+        currentMessage = checkMoveValid(currentMove, currentMessage);
+        if (currentMessage.isMoveValidity()) {
+          // make move and update board
+          char[][] boardState = gb.getBoardState();
+          boardState[currentMove.getMoveX()][currentMove.getMoveY()] = currentMove.getPlayer()
+              .getType();
+          gb.setBoardState(boardState);
+          gb.setTurn(3 - gb.getTurn());
+
+          // check if game ended
+          if (checkGameEnd()) {
+            if (gb.isDraw()) {
+              gb.setWinner(0);
+              gb.setGameStarted(false);
+            } else {
+              gb.setWinner(currentPlayer);
+              gb.setGameStarted(false);
+            }
           }
         }
       }
@@ -114,6 +120,12 @@ class PlayGame {
       ctx.result(result);
       sendGameBoardToAllPlayers(gson.toJson(gb));
       System.out.println(result);
+    });
+
+    // get game board for testing
+    app.post("/testgameboard", ctx -> {
+      String result = gson.toJson(gb);
+      ctx.result(result);
     });
 
     // Web sockets - DO NOT DELETE or CHANGE
@@ -126,18 +138,24 @@ class PlayGame {
    * @param gameBoardJson Gameboard JSON
    * @throws IOException Websocket message send IO Exception
    */
-  private static void sendGameBoardToAllPlayers(final String gameBoardJson) {
+  public static void sendGameBoardToAllPlayers(final String gameBoardJson) {
     Queue<Session> sessions = UiWebSocket.getSessions();
     for (Session sessionPlayer : sessions) {
       try {
         sessionPlayer.getRemote().sendString(gameBoardJson);
       } catch (IOException e) {
-        // Add logger here
+        System.out.println("IO Exception");
       }
     }
   }
 
-  private static Message checkMoveValid(Move move, Message message) {
+  /**
+   * Check if current move is valid.
+   * 
+   * @param move Move, message Message
+   * @return Message
+   */
+  public static Message checkMoveValid(Move move, Message message) {
     char[][] boardState = gb.getBoardState();
     // check if it's current player's turn
     if (gb.getTurn() != move.getPlayer().getId()) {
@@ -159,7 +177,12 @@ class PlayGame {
     return message;
   }
 
-  private static boolean checkGameEnd() {
+  /**
+   * Check if game has endded with tie or win.
+   * 
+   * @return boolean
+   */
+  public static boolean checkGameEnd() {
     char[][] boardState = gb.getBoardState();
     // one player wins
     if ((boardState[0][0] == boardState[0][1] && boardState[0][0] == boardState[0][2]
