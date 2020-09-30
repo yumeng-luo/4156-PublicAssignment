@@ -54,7 +54,7 @@ class PlayGame {
       gb.setTurn(1);
       gb.setBoardState(new char[3][3]);
       String result = gson.toJson(gb);
-      ctx.result(result).contentType("application/json");
+      ctx.result(result);
 
     });
 
@@ -67,7 +67,7 @@ class PlayGame {
       p2.setType(gb.getP1().getType() == 'X' ? 'O' : 'X');
       gb.setP2(p2);
       // redirect to game page
-      ctx.redirect("tictactoe.html?p=2");
+      ctx.redirect("/tictactoe.html?p=2");
 
       // update view for both players
       sendGameBoardToAllPlayers(gson.toJson(gb));
@@ -111,7 +111,7 @@ class PlayGame {
       }
       // update view for both player
       String result = gson.toJson(currentMessage);
-      ctx.result(result).contentType("application/json");
+      ctx.result(result);
       sendGameBoardToAllPlayers(gson.toJson(gb));
       System.out.println(result);
     });
