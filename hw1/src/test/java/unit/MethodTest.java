@@ -25,8 +25,7 @@ public class MethodTest {
     PlayGame.main(new String[0]);
     System.out.println("=============Before All===========");
   }
-  
-  
+
   /*
    * Test sendGameBoardToAllPlayers
    * 
@@ -215,54 +214,54 @@ public class MethodTest {
     PlayGame.gb.setP2(p2);
     PlayGame.gb.setTurn(1);
     PlayGame.gb.setGameStarted(true);
-    
+
     // Check 8 different game end conditions
     char[][] boardState = { { 'O', 'X', '\0' }, { 'O', 'X', '\0' }, { 'O', '\0', '\0' } };
     PlayGame.gb.setBoardState(boardState);
     boolean gameEnd = PlayGame.checkGameEnd();
     assertEquals(true, gameEnd);
-    
+
     char[][] boardState2 = { { '\0', 'O', 'X' }, { '\0', 'O', 'X' }, { '\0', 'O', '\0' } };
     PlayGame.gb.setBoardState(boardState2);
     gameEnd = PlayGame.checkGameEnd();
     assertEquals(true, gameEnd);
-    
+
     char[][] boardState3 = { { 'X', '\0', 'O' }, { 'X', '\0', 'O' }, { '\0', '\0', 'O' } };
     PlayGame.gb.setBoardState(boardState3);
     gameEnd = PlayGame.checkGameEnd();
     assertEquals(true, gameEnd);
-    
-    char[][] boardState4 = { { 'O', 'O', 'O' }, { '\0', '\0', '\0'}, { 'X', 'X', '\0'  } };
+
+    char[][] boardState4 = { { 'O', 'O', 'O' }, { '\0', '\0', '\0' }, { 'X', 'X', '\0' } };
     PlayGame.gb.setBoardState(boardState4);
     gameEnd = PlayGame.checkGameEnd();
     assertEquals(true, gameEnd);
-    
+
     char[][] boardState5 = { { 'X', 'X', '\0' }, { 'O', 'O', 'O' }, { '\0', '\0', '\0' } };
     PlayGame.gb.setBoardState(boardState5);
     gameEnd = PlayGame.checkGameEnd();
     assertEquals(true, gameEnd);
-    
-    char[][] boardState6 = { { '\0', '\0', '\0' }, { 'X', 'X', '\0'  }, { 'O', 'O', 'O' } };
+
+    char[][] boardState6 = { { '\0', '\0', '\0' }, { 'X', 'X', '\0' }, { 'O', 'O', 'O' } };
     PlayGame.gb.setBoardState(boardState6);
     gameEnd = PlayGame.checkGameEnd();
     assertEquals(true, gameEnd);
-    
-    char[][] boardState7 = { { 'O', '\0', '\0' }, { 'X', 'O', '\0'  }, { 'X', '\0', 'O' } };
+
+    char[][] boardState7 = { { 'O', '\0', '\0' }, { 'X', 'O', '\0' }, { 'X', '\0', 'O' } };
     PlayGame.gb.setBoardState(boardState7);
     gameEnd = PlayGame.checkGameEnd();
     assertEquals(true, gameEnd);
-    
-    char[][] boardState8 = { { '\0', '\0', 'O' }, { 'X', 'O', '\0'  }, { 'O', '\0', 'X' } };
+
+    char[][] boardState8 = { { '\0', '\0', 'O' }, { 'X', 'O', '\0' }, { 'O', '\0', 'X' } };
     PlayGame.gb.setBoardState(boardState8);
     gameEnd = PlayGame.checkGameEnd();
     assertEquals(true, gameEnd);
-    
-    char[][] boardState9 = { { '\0', '\0', 'O' }, { 'X', '\0', '\0'  }, { 'O', '\0', 'O' } };
+
+    char[][] boardState9 = { { '\0', '\0', 'O' }, { 'X', '\0', '\0' }, { 'O', '\0', 'O' } };
     PlayGame.gb.setBoardState(boardState9);
     gameEnd = PlayGame.checkGameEnd();
     assertEquals(false, gameEnd);
-    
-    char[][] boardState10 = { { '\0', '\0', 'O' }, { 'X', '\0', '\0'  }, { 'O', 'X', 'O' } };
+
+    char[][] boardState10 = { { '\0', '\0', 'O' }, { 'X', '\0', '\0' }, { 'O', 'X', 'O' } };
     PlayGame.gb.setBoardState(boardState10);
     gameEnd = PlayGame.checkGameEnd();
     assertEquals(false, gameEnd);
@@ -325,7 +324,7 @@ public class MethodTest {
 
     boolean gameEnd = PlayGame.checkGameEnd();
     assertEquals(false, gameEnd);
-    
+
     boardState[0][1] = '\0';
     boardState[0][0] = 'O';
     boardState[1][2] = 'X';
@@ -336,7 +335,7 @@ public class MethodTest {
     assertEquals(false, gameEnd);
 
   }
-  
+
   /**
    * This method runs only once after all the test cases have been executed.
    */
@@ -346,5 +345,5 @@ public class MethodTest {
     PlayGame.stop();
     System.out.println("============After All============");
   }
-  
+
 }

@@ -74,7 +74,7 @@ public class PlayGame {
 
       Message currentMessage = new Message();
       // check if game has started yet
-      if (gb == null || !gb.isGameStarted()) {
+      if (!gb.isGameStarted()) {
         currentMessage.setMoveValidity(false);
         currentMessage.setCode(401);
         currentMessage.setMessage("Wait for player to join");
