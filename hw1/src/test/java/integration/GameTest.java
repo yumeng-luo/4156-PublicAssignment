@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.google.gson.Gson;
 import controllers.PlayGame;
+import java.sql.SQLException;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import kong.unirest.json.JSONObject;
@@ -30,6 +31,16 @@ public class GameTest {
   public static void init() {
     // Start Server
     PlayGame.main(new String[0]);
+    // clear previous db
+    PlayGame.c = PlayGame.createConnection();
+    PlayGame.cleanTable(PlayGame.c);
+    try {
+      PlayGame.c.close();
+      System.out.println("DB closed in before all... ");
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+
     System.out.println("=============Before All===========");
   }
 
@@ -146,6 +157,7 @@ public class GameTest {
    * This is a test case to evaluate the test game board endpoint.
    */
   @Test
+  @Order(11)
   public void testgameboardTest() {
     HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
     String responseBody = response.getBody();
@@ -157,6 +169,7 @@ public class GameTest {
    * to start without player 2.
    */
   @Test
+  @Order(12)
   public void move1before2() {
 
     // disregard previous tests and create new game
@@ -192,6 +205,7 @@ public class GameTest {
    * to start without start game.
    */
   @Test
+  @Order(13)
   public void move1beforeStart() {
 
     // disregard previous tests and create new game
@@ -246,6 +260,7 @@ public class GameTest {
    * to make a move after game starts.
    */
   @Test
+  @Order(14)
   public void move2afterStart() {
 
     // disregard previous tests and create new game
@@ -498,7 +513,6 @@ public class GameTest {
     assertEquals('X', boardState[0][1]);
     assertEquals('X', boardState[0][2]);
     assertEquals('X', boardState[1][0]);
-
     assertEquals('\0', boardState[2][0]);
     assertEquals('\0', boardState[2][2]);
 
@@ -542,6 +556,7 @@ public class GameTest {
    * This is a test case to evaluate the move end point. Valid moves: Ties
    */
   @Test
+  @Order(15)
   public void moveTie() {
 
     Unirest.get("http://localhost:8080/newgame").asString();
@@ -568,6 +583,391 @@ public class GameTest {
 
     System.out.println("Test Draw");
   }
+
+  /**
+   * Each time new game starts, data baed tables must be cleaned.
+   */
+  @Test
+  @Order(16)
+  public void newGame() {
+    Unirest.get("http://localhost:8080/newgame").asString();
+    Unirest.post("http://localhost:8080/startgame").body("type=O").asString();
+    // check game board changed
+    HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
+    String responseBody = response.getBody();
+    JSONObject jsonObject = new JSONObject(responseBody);
+    assertEquals(false, jsonObject.get("gameStarted"));
+    assertEquals(0, jsonObject.get("winner"));
+    assertEquals(false, jsonObject.get("isDraw"));
+    assertEquals(1, jsonObject.get("turn"));
+    Gson gson = new Gson();
+    GameBoard gameBoard = gson.fromJson(jsonObject.toString(), GameBoard.class);
+    Player p1 = gameBoard.getP1();
+    assertEquals('O', p1.getType());
+    char[][] boardState = gameBoard.getBoardState();
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        assertEquals(boardState[i][j], '\0');
+      }
+    }
+
+    System.out.println("Test new game db");
+
+  }
+
+  
+
+  /**
+   * Each time new game starts, data base tables must be cleaned.
+   */
+  @Test
+  @Order(16)
+  public void newGameDB() {
+    Unirest.get("http://localhost:8080/newgame").asString();
+    Unirest.post("http://localhost:8080/startgame").body("type=O").asString();
+    // check game board changed
+    HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
+    String responseBody = response.getBody();
+    JSONObject jsonObject = new JSONObject(responseBody);
+    assertEquals(false, jsonObject.get("gameStarted"));
+    assertEquals(0, jsonObject.get("winner"));
+    assertEquals(false, jsonObject.get("isDraw"));
+    assertEquals(1, jsonObject.get("turn"));
+    Gson gson = new Gson();
+    GameBoard gameBoard = gson.fromJson(jsonObject.toString(), GameBoard.class);
+    Player p1 = gameBoard.getP1();
+    assertEquals('O', p1.getType());
+    char[][] boardState = gameBoard.getBoardState();
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        assertEquals(boardState[i][j], '\0');
+      }
+    }
+
+    System.out.println("Test new game db");
+
+  }
+  
+  /**
+   * Player 1 started, game crashed, reboot with player 1.
+   */
+  @Test
+  @Order(17)
+  public void p1DB() {
+    Unirest.get("http://localhost:8080/newgame").asString();
+    Unirest.post("http://localhost:8080/startgame").body("type=O").asString();
+    
+    // Interrupt game
+    PlayGame.stop();
+    
+    PlayGame.main(new String[0]);
+    Unirest.get("http://localhost:8080/").asString();
+    System.out.println("Rebooted");
+    
+    
+    // check game board
+    HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
+    String responseBody = response.getBody();
+    JSONObject jsonObject = new JSONObject(responseBody);
+    assertEquals(false, jsonObject.get("gameStarted"));
+    assertEquals(0, jsonObject.get("winner"));
+    assertEquals(false, jsonObject.get("isDraw"));
+    assertEquals(1, jsonObject.get("turn"));
+    Gson gson = new Gson();
+    GameBoard gameBoard = gson.fromJson(jsonObject.toString(), GameBoard.class);
+    Player p1 = gameBoard.getP1();
+    assertEquals('O', p1.getType());
+    char[][] boardState = gameBoard.getBoardState();
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        assertEquals(boardState[i][j], '\0');
+      }
+    }
+
+    System.out.println("Test p1 start game db");
+
+  }
+  
+  /**
+   * Player 2 joined, game crashed, reboot with player 1 & 2.
+   */
+  @Test
+  @Order(18)
+  public void p2DB() {
+    Unirest.get("http://localhost:8080/newgame").asString();
+    Unirest.post("http://localhost:8080/startgame").body("type=O").asString();
+    Unirest.get("http://localhost:8080/joingame").asString();
+    
+    // Interrupt game
+    PlayGame.stop();
+    
+    PlayGame.main(new String[0]);
+    Unirest.get("http://localhost:8080/").asString();
+    System.out.println("Rebooted");
+    
+    
+    // check game board
+    HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
+    String responseBody = response.getBody();
+    JSONObject jsonObject = new JSONObject(responseBody);
+    assertEquals(true, jsonObject.get("gameStarted"));
+    assertEquals(0, jsonObject.get("winner"));
+    assertEquals(false, jsonObject.get("isDraw"));
+    assertEquals(1, jsonObject.get("turn"));
+    Gson gson = new Gson();
+    GameBoard gameBoard = gson.fromJson(jsonObject.toString(), GameBoard.class);
+    Player p1 = gameBoard.getP1();
+    assertEquals('O', p1.getType());
+    Player p2 = gameBoard.getP2();
+    assertEquals('X', p2.getType());
+    char[][] boardState = gameBoard.getBoardState();
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        assertEquals(boardState[i][j], '\0');
+      }
+    }
+
+    System.out.println("Test p2 start game db");
+
+  }
+  
+  
+  
+
+  /**
+   * Player 2 made invalid move, game crashed, reboot with player 1 & 2 and board unchanged.
+   */
+  @Test
+  @Order(19)
+  public void invalidMoveDB() {
+    Unirest.get("http://localhost:8080/newgame").asString();
+    Unirest.post("http://localhost:8080/startgame").body("type=O").asString();
+    Unirest.get("http://localhost:8080/joingame").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=1&y=1").asString();
+    Unirest.post("http://localhost:8080/move/2").body("x=1&y=1").asString();
+    
+    // Interrupt game
+    PlayGame.stop();
+    
+    PlayGame.main(new String[0]);
+    Unirest.get("http://localhost:8080/").asString();
+    System.out.println("Rebooted");
+    
+    
+    // check game board
+    HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
+    String responseBody = response.getBody();
+    JSONObject jsonObject = new JSONObject(responseBody);
+    assertEquals(true, jsonObject.get("gameStarted"));
+    assertEquals(0, jsonObject.get("winner"));
+    assertEquals(false, jsonObject.get("isDraw"));
+    assertEquals(2, jsonObject.get("turn"));
+    Gson gson = new Gson();
+    GameBoard gameBoard = gson.fromJson(jsonObject.toString(), GameBoard.class);
+    Player p1 = gameBoard.getP1();
+    assertEquals('O', p1.getType());
+    Player p2 = gameBoard.getP2();
+    assertEquals('X', p2.getType());
+    char[][] boardState = gameBoard.getBoardState();
+    assertEquals('\0', boardState[0][0]);
+    assertEquals('\0', boardState[0][1]);
+    assertEquals('\0', boardState[0][2]);
+    assertEquals('\0', boardState[1][0]);
+    assertEquals('O', boardState[1][1]);
+    assertEquals('\0', boardState[1][2]);
+    assertEquals('\0', boardState[2][0]);
+    assertEquals('\0', boardState[2][1]);
+    assertEquals('\0', boardState[2][2]);
+
+    System.out.println("Test invalid move db");
+
+  }
+  
+  /**
+   * Player 1 made a valid move, game crashed, reboot with player 1 & 2 and board changed.
+   */
+  @Test
+  @Order(20)
+  public void validMoveDB() {
+    Unirest.get("http://localhost:8080/newgame").asString();
+    Unirest.post("http://localhost:8080/startgame").body("type=O").asString();
+    Unirest.get("http://localhost:8080/joingame").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=1&y=1").asString();
+    
+    // Interrupt game
+    PlayGame.stop();
+    
+    PlayGame.main(new String[0]);
+    Unirest.get("http://localhost:8080/").asString();
+    System.out.println("Rebooted");
+    
+    
+    // check game board
+    HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
+    String responseBody = response.getBody();
+    JSONObject jsonObject = new JSONObject(responseBody);
+    assertEquals(true, jsonObject.get("gameStarted"));
+    assertEquals(0, jsonObject.get("winner"));
+    assertEquals(false, jsonObject.get("isDraw"));
+    assertEquals(2, jsonObject.get("turn"));
+    Gson gson = new Gson();
+    GameBoard gameBoard = gson.fromJson(jsonObject.toString(), GameBoard.class);
+    Player p1 = gameBoard.getP1();
+    assertEquals('O', p1.getType());
+    Player p2 = gameBoard.getP2();
+    assertEquals('X', p2.getType());
+    char[][] boardState = gameBoard.getBoardState();
+    assertEquals('\0', boardState[0][0]);
+    assertEquals('\0', boardState[0][1]);
+    assertEquals('\0', boardState[0][2]);
+    assertEquals('\0', boardState[1][0]);
+    assertEquals('O', boardState[1][1]);
+    assertEquals('\0', boardState[1][2]);
+    assertEquals('\0', boardState[2][0]);
+    assertEquals('\0', boardState[2][1]);
+    assertEquals('\0', boardState[2][2]);
+
+    System.out.println("Test valid move db");
+
+  }
+  
+  
+  /**
+   * Player 1 won, game crashed, reboot with player 1 as winner .
+   */
+  @Test
+  @Order(21)
+  public void winnerDB() {
+    Unirest.get("http://localhost:8080/newgame").asString();
+    Unirest.post("http://localhost:8080/startgame").body("type=O").asString();
+    Unirest.get("http://localhost:8080/joingame").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=1&y=1").asString();
+    Unirest.post("http://localhost:8080/move/2").body("x=0&y=1").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=0&y=0").asString();
+    Unirest.post("http://localhost:8080/move/2").body("x=0&y=2").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=2&y=2").asString();   
+    
+    // Interrupt game
+    PlayGame.stop();
+    
+    PlayGame.main(new String[0]);
+    Unirest.get("http://localhost:8080/").asString();
+    System.out.println("Rebooted");
+    
+    
+    // check game board
+    HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
+    String responseBody = response.getBody();
+    JSONObject jsonObject = new JSONObject(responseBody);
+    assertEquals(false, jsonObject.get("gameStarted"));
+    assertEquals(1, jsonObject.get("winner"));
+    assertEquals(false, jsonObject.get("isDraw"));
+    assertEquals(2, jsonObject.get("turn"));
+    Gson gson = new Gson();
+    GameBoard gameBoard = gson.fromJson(jsonObject.toString(), GameBoard.class);
+    Player p1 = gameBoard.getP1();
+    assertEquals('O', p1.getType());
+    Player p2 = gameBoard.getP2();
+    assertEquals('X', p2.getType());
+    char[][] boardState = gameBoard.getBoardState();
+    assertEquals('O', boardState[0][0]);
+    assertEquals('X', boardState[0][1]);
+    assertEquals('X', boardState[0][2]);
+    assertEquals('\0', boardState[1][0]);
+    assertEquals('O', boardState[1][1]);
+    assertEquals('\0', boardState[1][2]);
+    assertEquals('\0', boardState[2][0]);
+    assertEquals('\0', boardState[2][1]);
+    assertEquals('O', boardState[2][2]);
+
+    System.out.println("Test win db");
+
+  }
+  
+  /**
+   * Game Draw, game crashed, reboot with draw .
+   */
+  @Test
+  @Order(22)
+  public void drawDB() {
+    Unirest.get("http://localhost:8080/newgame").asString();
+    Unirest.post("http://localhost:8080/startgame").body("type=O").asString();
+    Unirest.get("http://localhost:8080/joingame").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=1&y=1").asString();
+    Unirest.post("http://localhost:8080/move/2").body("x=0&y=1").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=2&y=1").asString();
+    Unirest.post("http://localhost:8080/move/2").body("x=0&y=2").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=0&y=0").asString();
+    Unirest.post("http://localhost:8080/move/2").body("x=1&y=0").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=1&y=2").asString();
+    Unirest.post("http://localhost:8080/move/2").body("x=2&y=2").asString();
+    Unirest.post("http://localhost:8080/move/1").body("x=2&y=0").asString();   
+    
+    // Interrupt game
+    PlayGame.stop();
+    
+    PlayGame.main(new String[0]);
+    Unirest.get("http://localhost:8080/").asString();
+    System.out.println("Rebooted");
+    
+    
+    // check game board
+    HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
+    String responseBody = response.getBody();
+    JSONObject jsonObject = new JSONObject(responseBody);
+    assertEquals(false, jsonObject.get("gameStarted"));
+    assertEquals(0, jsonObject.get("winner"));
+    assertEquals(true, jsonObject.get("isDraw"));
+    assertEquals(2, jsonObject.get("turn"));
+    Gson gson = new Gson();
+    GameBoard gameBoard = gson.fromJson(jsonObject.toString(), GameBoard.class);
+    Player p1 = gameBoard.getP1();
+    assertEquals('O', p1.getType());
+    Player p2 = gameBoard.getP2();
+    assertEquals('X', p2.getType());
+    char[][] boardState = gameBoard.getBoardState();
+    assertEquals('O', boardState[0][0]);
+    assertEquals('X', boardState[0][1]);
+    assertEquals('X', boardState[0][2]);
+    assertEquals('X', boardState[1][0]);
+    assertEquals('O', boardState[1][1]);
+    assertEquals('O', boardState[1][2]);
+    assertEquals('O', boardState[2][0]);
+    assertEquals('O', boardState[2][1]);
+    assertEquals('X', boardState[2][2]);
+
+    System.out.println("Test draw db");
+
+  }
+  
+  /**
+   * Game created, game crashed, reboot with new gameboard .
+   */
+  @Test
+  @Order(23)
+  public void newDB() {
+    Unirest.get("http://localhost:8080/newgame").asString();   
+    
+    // Interrupt game
+    PlayGame.stop();
+    
+    PlayGame.main(new String[0]);
+    Unirest.get("http://localhost:8080/").asString();
+    System.out.println("Rebooted");
+    
+    
+    // check game board
+    HttpResponse<String> response = Unirest.post("http://localhost:8080/testgameboard").asString();
+    String responseBody = response.getBody();
+    JSONObject jsonObject = new JSONObject(responseBody);
+    assertEquals(false, jsonObject.get("gameStarted"));
+    assertEquals(0, jsonObject.get("winner"));
+    assertEquals(false, jsonObject.get("isDraw"));
+
+    System.out.println("Test create game and crash db");
+
+  }
+  
 
   /**
    * This will run every time after a test has finished.
